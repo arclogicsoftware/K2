@@ -1,6 +1,10 @@
 
 ## On Tap
 
+* Repo needs login forms added to/for auth.
+
+### BUGS
+
 * foo
 
 ## Value
@@ -17,7 +21,9 @@
 
 ## Features
 
-* foo
+* Integration with a mailing list/newsletter/contact provider(s).
+* Landing page with sign up when service is available.
+* Admin: Notify on app errors with contextual links.
 
 ## Features: LATER
 
@@ -40,10 +46,6 @@
 * foo
 
 ### TESTS/VALIDATE
-
-* foo
-
-### BUGS
 
 * foo
 
