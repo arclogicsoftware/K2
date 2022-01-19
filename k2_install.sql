@@ -13,7 +13,7 @@ to make the grants from admin to the current user.
 Install APEX_UTL2 which contain misc APEX related snippets.
 */
 
-@lib/apex_utl2/app_install.sql
+@lib/apex_utl2/apex_utl2_install.sql
 
 
 /*
@@ -41,7 +41,7 @@ Your K2 app config settings.
 Install you application's code.
 */
 
-@app/app_install.sql
+@app/saas_app_install.sql
 
 
 commit;
