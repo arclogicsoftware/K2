@@ -17,7 +17,7 @@ Use the following links to configure native Oracle APEX email. You will create a
 
 [Sending Email from your Oracle APEX App on Autonomous Database](https://blogs.oracle.com/apex/post/sending-email-from-your-oracle-apex-app-on-autonomous-database)
 
-> I have set up an SPF record for arclogicsoftware.com. I have also added  ethan@arclogicsoftware.com as an approved sender. The commands outlined in the article to register SMTP credentials with Oracle APEX have been run.
+> I have set up an SPF record for arclogicsoftware.com. I have also added  foo@bar.com as an approved sender. The commands outlined in the article to register SMTP credentials with Oracle APEX have been run.
 
 #### SendGrid Email (optional)
 

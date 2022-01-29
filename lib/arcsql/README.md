@@ -10,7 +10,7 @@ https://e-t-h-a-n.com/how-to-install-arcsql
 
 ## Uninstall
 
-As the user who owns the ArcSQL objects run the uninstall_arcsql.sql script or drop the user and any related scheduled jobs.
+As the user who owns the ArcSQL objects run the arcsql_uninstall.sql script or drop the user and any related scheduled jobs.
 
 Thanks,
 Ethan 

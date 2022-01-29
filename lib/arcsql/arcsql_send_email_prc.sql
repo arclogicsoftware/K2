@@ -21,7 +21,6 @@ begin
    if arcsql_cfg.disable_email then 
       return;
    end if;
-   arcsql.log(''send_email: from=''||p_from||'', to=''||p_to||'', subject=''||p_subject);
    apex_mail.send(
       p_to=>p_to,
       p_from=>p_from,

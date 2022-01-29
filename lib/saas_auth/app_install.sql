@@ -19,18 +19,18 @@ The from address should be an approved sender.
 
 */
 
-whenever sqlerror exit failure;
+whenever sqlerror continue;
 -- set echo on
 
 exec arcsql.set_app_version('saas_auth', .01);
 
--- Add a copy of this file in your app repo and make sure it installs after this one.
-@saas_auth_config.sql
+@../../config/secret_saas_auth_config.sql
 @saas_auth_schema.sql 
 @saas_auth_pkgh.sql 
 @saas_auth_pkgb.sql 
 -- This file can be copied and modified within your app.
 @saas_auth_events.sql
+@saas_auth_post_install.sql
 
 exec arcsql.confirm_app_version('saas_auth');
 

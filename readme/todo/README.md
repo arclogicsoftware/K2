@@ -69,4 +69,7 @@
 
 * foo
 
+### INTEGRATION
+* Payments: https://www.2checkout.com/
+
 

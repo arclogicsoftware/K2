@@ -1,5 +1,13 @@
 
 /*
+
+Contains configuration for the app.
+
+*/
+
+@../config/secret_saas_app_config.sql 
+
+/*
 schema.sql - Contains most of the DDL for you application. 
 
 This file should be idempotent! It should always produce the correct
@@ -50,5 +58,18 @@ This enables you to hook email send code to the email service provider you are u
 
 @send_email.sql
 
+/*
+
+Anything you want to run at the end of the install/upgrade. Can be patching code.
+
+*/
+
+@saas_app_post_install.sql
+
+/*
+Create the contact groups for this application.
+*/
+
+@arcsql_contact_groups.sql
 
 commit;

@@ -59,7 +59,7 @@ begin
       reset_pass_token varchar2(120),
       reset_pass_expire date default null,
       -- active, locked, inactive, delete
-      account_status varchar2(12) default ''
+      account_status varchar2(12) default ''active'',
       is_test_user varchar2(1) default ''n'',
       created date not null,
       created_by varchar2(120) not null,
@@ -101,6 +101,7 @@ end;
 /
 
 
+-- uninstall: exec drop_view('v_saas_auth_available_accounts');
 create or replace view v_saas_auth_available_accounts as
    select * from saas_auth where account_status in ('active', 'inactive')
       and account_status not in ('delete', 'locked');
@@ -146,11 +147,3 @@ begin
    end if;
 end;
 /
-
-
--- uninstall: drop view user_flash_message;
-create or replace view user_flash_message as (
-    select * from flash_message
-     where (user_id=saas_auth_pkg.get_user_id_from_user_name(v('APP_USER')) 
-        or session_id=v('APP_SESSION'))
-       and expires_at<=sysdate);

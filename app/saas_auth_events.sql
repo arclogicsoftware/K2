@@ -6,6 +6,7 @@ create or replace procedure on_create_account (
    -- Do stuff when a new account is added to the saas_auth table.
 begin
    arcsql.debug('on_create_account: '||p_user_id); 
+   saas_app.on_create_account(p_user_id=>p_user_id);
 end;
 /
 
@@ -26,5 +27,6 @@ create or replace procedure on_login (
    -- Do stuff when a user successfully logs in.
 begin
    arcsql.debug('on_login: '||p_user_id); 
+   saas_app.on_login(p_user_id=>p_user_id);
 end;
 /

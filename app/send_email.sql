@@ -1,3 +1,5 @@
+
+
 create or replace procedure send_email (
    -- Valid email address to which the email is sent (required). For multiple email addresses, use a comma-separated list
    p_to in varchar2,
@@ -11,7 +13,6 @@ begin
    if arcsql_cfg.disable_email then 
       return;
    end if;
-   arcsql.log('send_email: from='||p_from||', to='||p_to||', subject='||p_subject);
    apex_mail.send(
       p_to=>p_to,
       p_from=>p_from,

@@ -13,6 +13,7 @@ exception
 end;
 /
 
+
 -- uninstall: drop procedure drop_object;
 create or replace procedure drop_object (object_name varchar2, object_type varchar2) is
    n number;
@@ -33,6 +34,7 @@ exception
       raise;
 end;
 /
+
 
 -- uninstall: drop function does_object_exist;
 create or replace function does_object_exist (object_name varchar2, object_type varchar2) return boolean authid current_user is
@@ -65,6 +67,7 @@ begin
 end;
 /
 
+
 create or replace procedure drop_view (view_name in varchar2) is 
 begin 
   if does_object_exist(drop_view.view_name, 'VIEW') then 
@@ -72,6 +75,7 @@ begin
   end if;
 end;
 /
+
 
 create or replace procedure drop_function (function_name in varchar2) is 
 begin 
@@ -81,6 +85,7 @@ begin
 end;
 /
 
+
 create or replace procedure drop_procedure (procedure_name in varchar2) is 
 begin 
   if does_object_exist(drop_procedure.procedure_name, 'PROCEDURE') then 
@@ -89,6 +94,7 @@ begin
 end;
 /
 
+
 create or replace procedure drop_type (type_name in varchar2) is 
 begin 
   if does_object_exist(drop_type.type_name, 'TYPE') then 
@@ -96,6 +102,7 @@ begin
   end if;
 end;
 /
+
 
 -- uninstall: drop function does_package_exist;
 create or replace function does_package_exist (package_name in varchar2) return boolean is 
@@ -108,6 +115,7 @@ begin
 end;
 /
 
+
 -- uninstall: drop function does_procedure_exist;
 create or replace function does_procedure_exist (procedure_name in varchar2) return boolean is 
 begin 
@@ -119,6 +127,7 @@ begin
 end;
 /
 
+
 -- uninstall: drop procedure drop_package;
 create or replace procedure drop_package (package_name in varchar2) is 
 begin 
@@ -127,6 +136,7 @@ begin
    end if;
 end;
 /
+
 
 -- uninstall: drop function does_table_exist;
 create or replace function does_table_exist (table_name varchar2) return boolean is
@@ -138,6 +148,7 @@ begin
    end if;
 end;
 /
+
 
 -- uninstall: drop function does_column_exist;
 create or replace function does_column_exist (table_name varchar2, column_name varchar2) return boolean is
@@ -157,6 +168,21 @@ when others then
 end;
 /
 
+
+-- uninstall: drop procedure drop_column;
+create or replace procedure drop_column (
+   table_name in varchar2,
+   column_name in varchar2) is 
+n number;
+begin 
+   if does_column_exist(
+      table_name, column_name) then 
+      execute_sql('alter table '||table_name||' drop column '||column_name);
+   end if;
+end;
+/
+
+
 -- uninstall: drop function does_index_exist;
 create or replace function does_index_exist (index_name varchar2) return boolean is
 begin
@@ -170,6 +196,7 @@ when others then
    raise;
 end;
 /
+
 
 -- uninstall: drop function does_constraint_exist;
 create or replace function does_constraint_exist (constraint_name varchar2) return boolean is
@@ -185,6 +212,7 @@ when others then
 end;
 /
 
+
 -- uninstall: drop procedure drop_index;
 create or replace procedure drop_index(index_name varchar2) is 
 begin
@@ -197,12 +225,14 @@ exception
 end;
 /
 
+
 -- uninstall: drop procedure drop_table;
 create or replace procedure drop_table(table_name varchar2) is
 begin
     drop_object(drop_table.table_name, 'TABLE');
 end;
 /
+
 
 -- uninstall: drop function does_sequence_exist;
 create or replace function does_sequence_exist (sequence_name varchar2) return boolean is
@@ -222,12 +252,14 @@ exception
 end;
 /
 
+
 -- uninstall: drop procedure drop_sequence;
 create or replace procedure drop_sequence (sequence_name varchar2) is 
 begin  
     drop_object(sequence_name, 'SEQUENCE');
 end;
 /
+
 
 -- uninstall: drop procedure create_sequence;
 create or replace procedure create_sequence (sequence_name in varchar2) is 
@@ -237,6 +269,7 @@ begin
    end if;
 end;
 /
+
 
 -- uninstall: drop function does_scheduler_job_exist;
 create or replace function does_scheduler_job_exist (p_job_name in varchar2) return boolean is
@@ -252,6 +285,7 @@ begin
 end;
 /
 
+
 -- Needs to be a standalong func here and not in arcsql package becuase authid current user is used.
 -- uninstall: drop function num_get_val_from_sql;
 create or replace function num_get_val_from_sql(sql_text in varchar2) return number authid current_user is 
@@ -261,6 +295,7 @@ begin
    return n;
 end;
 /
+
 
 -- uninstall: drop function does_database_account_exist;
 create or replace function does_database_account_exist (username varchar2) return boolean is 

@@ -755,7 +755,7 @@ begin
       set num_value=p_num,
           update_time=sysdate
     where key=lower(cache_key);
-    
+
 end;
 
 function get_cache (cache_key in varchar2) return varchar2 is 
@@ -1945,7 +1945,12 @@ Logging
 -----------------------------------------------------------------------------------
 */
 
-procedure set_log_type (p_log_type in varchar2) is 
+-- The log type is used to determine if the log entry to sent to email or sms.
+
+procedure set_log_type (
+   -- 
+   -- 
+   p_log_type in varchar2) is 
 begin 
    select * into g_log_type from arcsql_log_type
     where log_type=p_log_type;
@@ -1988,7 +1993,7 @@ begin
          log_type) values (
          lower(p_type));
    end if;
-   if arcsql.log_level >= p_level  then
+   if arcsql_cfg.log_level >= p_level  then
       insert into arcsql_log (
       log_text,
       log_type,
@@ -2029,7 +2034,7 @@ procedure log (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2050,7 +2055,7 @@ procedure log_notify (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2071,7 +2076,7 @@ procedure log_deprecated (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2092,7 +2097,7 @@ procedure log_audit (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2113,7 +2118,7 @@ procedure log_err (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2134,7 +2139,7 @@ procedure debug (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2155,7 +2160,7 @@ procedure debug2 (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2176,7 +2181,7 @@ procedure debug3 (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2197,7 +2202,7 @@ procedure log_pass (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2219,7 +2224,7 @@ procedure log_fail (
    metric_name_2 in varchar2 default null,
    metric_2 in number default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2236,7 +2241,7 @@ procedure log_sms (
    p_key in varchar2 default null, 
    p_tags in varchar2 default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2249,7 +2254,7 @@ procedure log_email (
    p_key in varchar2 default null, 
    p_tags in varchar2 default null) is 
 begin
-   log_interface(
+   log_interface (
       p_text=>p_text, 
       p_key=>p_key, 
       p_tags=>p_tags, 
@@ -2260,155 +2265,273 @@ end;
 /* 
 -----------------------------------------------------------------------------------
 Contact Groups
+
+ToDo:
+   * Ability to link groups with certain log entries. Maybe using a regex.
+   * Create a default arcsql_admin contact group and add default email.
+   * log_type sends_email/sms should support cron type values.
+   * make ui case insensative
 -----------------------------------------------------------------------------------
 */
 
-procedure set_contact_group (p_group_name in varchar2) is 
+function get_contact_group (
+   p_group_name in varchar2) return arcsql_contact_group%rowtype is 
+   r arcsql_contact_group%rowtype;
 begin 
-   select * into g_contact_group from arcsql_contact_group where group_name=p_group_name;
+   select * into r from arcsql_contact_group where group_name=lower(p_group_name);
+   return r;
 end;
 
-procedure raise_contact_group_not_set is 
+
+function does_contact_group_exist (
+   p_group_name in varchar2) return boolean is 
+   n number;
 begin 
-   if g_contact_group.group_name is null then  
-      raise_application_error(-20001, 'Contact group is not set.');
+   select count(*) into n 
+     from arcsql_contact_group 
+    where group_name=lower(p_group_name);
+   return n=1;
+end;
+
+
+procedure create_contact_group (
+   p_group_name in varchar2,
+   p_is_group_enabled in boolean default true,
+   p_is_group_on_hold in boolean default false,
+   p_is_sms_disabled in boolean default false,
+   p_max_queue_secs in number default 0,
+   p_max_idle_secs in number default 0,
+   p_max_count in number default 0
+   ) is 
+   v_is_group_enabled varchar2(1) := 'N';
+   v_is_group_on_hold varchar2(1) := 'N';
+   v_is_sms_disabled varchar2(1)  := 'N';
+begin 
+   arcsql.debug('create_contact_group: ');
+   if does_contact_group_exist(p_group_name) then 
+      return;
+   end if;
+   if p_is_group_enabled then 
+      v_is_group_enabled := 'Y';
+   end if;
+   if p_is_group_on_hold then 
+      v_is_group_on_hold := 'Y';
+   end if;  
+   if p_is_sms_disabled then 
+      v_is_sms_disabled := 'Y';
+   end if;
+   insert into arcsql_contact_group (
+      group_name,
+      is_group_enabled,
+      is_group_on_hold,
+      is_sms_disabled,
+      max_queue_secs,
+      max_idle_secs,
+      max_count
+      ) values (
+      lower(p_group_name),
+      v_is_group_enabled,
+      v_is_group_on_hold,
+      v_is_sms_disabled,
+      p_max_queue_secs,
+      p_max_idle_secs,
+      p_max_count);
+end;
+
+
+procedure add_contact_to_contact_group (
+   p_group_name in varchar2,
+   p_email_address in varchar2,
+   p_sms_address in varchar2) is 
+   n number;
+begin 
+   arcsql.debug('add_contact_to_contact_group: ');
+   select count(*) into n 
+     from arcsql_contact_group_contacts 
+    where group_name=lower(p_group_name) 
+      and (email_address=lower(p_email_address)
+       or sms_address=lower(p_sms_address));
+   if n = 0 then 
+      insert into arcsql_contact_group_contacts (
+         group_name,
+         email_address,
+         sms_address) values (
+         lower(p_group_name),
+         lower(p_email_address),
+         lower(p_sms_address));
    end if;
 end;
 
-function is_sms_possible return boolean is 
+
+function is_sms_possible (
+   -- Return true the sms is enabled for the group and the group is enabled and not on hold.
+   --
+   p_group_name in varchar2) return boolean is 
    n number;
 begin 
-   raise_contact_group_not_set;
-   select count(*) into n from arcsql_contact_group 
-    where group_name=g_contact_group.group_name 
-      and not sms_addresses is null 
+   select count(*) into n 
+     from arcsql_contact_group 
+    where group_name=p_group_name 
       and is_truthy_y(is_group_enabled)='y' 
       and is_truthy_y(is_sms_disabled)='n'
       and is_truthy_y(is_group_on_hold)='n';
    if n > 0 then 
-      debug('is_sms_possible: true');
+      debug2('is_sms_possible: true');
       return true;
    else 
-      debug('is_sms_possible: false');
+      debug2('is_sms_possible: false');
       return false;
    end if;
 end;
 
-function is_email_possible return boolean is 
+
+function is_email_possible (
+   -- Return true if the group is enabled and not on hold.
+   -- 
+   p_group_name in varchar2) return boolean is 
    n number;
 begin 
-   raise_contact_group_not_set;
-   select count(*) into n from arcsql_contact_group 
-    where group_name=g_contact_group.group_name 
-      and not email_addresses is null 
+   select count(*) into n 
+     from arcsql_contact_group 
+    where group_name=p_group_name
       and is_truthy_y(is_group_enabled)='y' 
       and is_truthy_y(is_group_on_hold)='n';
    if n > 0 then 
-      debug('is_email_possible: true');
+      debug2('is_email_possible: true');
       return true;
    else 
-      debug('is_email_possible: false');
+      debug2('is_email_possible: false');
       return false;
    end if;
 end;
 
-function has_sms_messages return boolean is 
+
+function has_sms_messages (
+   p_group_name in varchar2) return boolean is 
    n number;
-   sql_text varchar2(1000);
+   g arcsql_contact_group%rowtype;
 begin
-   raise_contact_group_not_set;
-   sql_text := '
-   select count(*) 
-     from '||nvl(g_contact_group.view_name, 'arcsql_log')||' '||'
-     where log_time > :b1 and
-           log_type in (select log_type from arcsql_log_type where arcsql.is_truthy_y(sends_sms)=''y'')';
-   execute immediate sql_text into n using nvl(g_contact_group.last_checked, sysdate);
+   g := get_contact_group(p_group_name);
+   select count(*) into n 
+    from arcsql_log a,
+         arcsql_log_type b
+   where log_time > g.last_sent 
+     and a.log_type=b.log_type  
+     and arcsql.is_truthy_y(sends_sms)='y';
    if n > 0 then 
-      debug('has_sms_messages: true');
+      debug2('has_sms_messages: true');
       return true;
    else 
-      debug('has_sms_messages: false');
+      debug2('has_sms_messages: false');
       return false;
    end if;
 end;
 
-function has_email_messages return boolean is 
+
+function has_email_messages (
+   p_group_name in varchar2) return boolean is 
    n number;
-   sql_text varchar2(1000);
+   g arcsql_contact_group%rowtype;
 begin
-   raise_contact_group_not_set;
-   sql_text := '
-   select count(*) 
-     from '||nvl(g_contact_group.view_name, 'arcsql_log')||' '||'
-     where log_time > :b1 and
-           log_type in (select log_type from arcsql_log_type where arcsql.is_truthy_y(sends_email)=''y'')';
-   execute immediate sql_text into n using nvl(g_contact_group.last_checked, sysdate);
+   g := get_contact_group(p_group_name);
+   select count(*) into n 
+    from arcsql_log a,
+         arcsql_log_type b
+    where log_time > g.last_sent 
+      and a.log_type=b.log_type  
+      and arcsql.is_truthy_y(b.sends_email)='y';
    if n > 0 then 
-      debug('has_email_messages: true');
+      debug2('has_email_messages: true');
       return true;
    else 
-      debug('has_email_messages: false');
+      debug2('has_email_messages: false');
       return false;
    end if;
 end;
 
-procedure send_sms_messages is 
-   type ctype is ref cursor;
-   c ctype;
-   n arcsql_log%rowtype;
-begin 
-   debug('Entering send_sms_messages.');
-   raise_contact_group_not_set;
-   open c for '
-   select * from '||nvl(g_contact_group.view_name, 'arcsql_log')||'
-    where log_time > :b1 and
-          log_type not like ''debug%'' and 
-          log_type in (select log_type from arcsql_log_type 
-                        where arcsql.is_truthy_y(sends_sms)=''y'')' using g_contact_group.last_checked;
-   loop
-      fetch c into n;
-         exit when c%notfound;
-         arcsql.debug('send_sms_messages: '||n.log_entry);
+
+procedure send_sms_messages (
+   p_group_name in varchar2) is 
+   cursor c_sms (p_last_sent date) is 
+   select a.* 
+     from arcsql_log a,
+          arcsql_log_type b 
+    where log_time > p_last_sent
+      and a.log_type=b.log_type
+      and a.log_type not like 'debug%' 
+      and arcsql.is_truthy_y(b.sends_sms)='y'
+    order by log_time;
+   g arcsql_contact_group%rowtype;
+   m varchar2(1200);
+   sms_addresses varchar2(1200);
+begin
+   debug('send_sms_messages: ');
+   g := get_contact_group(p_group_name); 
+   select listagg(sms_address, ',') into sms_addresses 
+     from arcsql_contact_group_contacts 
+    where group_name=p_group_name;
+   for c in c_sms(g.last_sent) loop 
+      m := m || to_char(c.log_time, 'DD-MON-RR HH24:MI')||': '||c.log_text||'
+';
    end loop;
-   update arcsql_contact_group set last_checked=sysdate where group_name=g_contact_group.group_name;
-   commit;
+   if m is not null and sms_addresses is not null then 
+      send_email (
+         p_to=>sms_addresses,
+         p_from=>arcsql_cfg.default_email_from_address,
+         p_body=>m,
+         p_subject=>'New log table entries from ArcSQL.');
+   end if;
 end;
 
-procedure send_email_messages is 
-   type ctype is ref cursor;
-   c ctype;
-   n arcsql_log%rowtype;
-begin 
-   debug('Entering send_email_messages.');
-   raise_contact_group_not_set;
-   open c for '
-   select * from '||nvl(g_contact_group.view_name, 'arcsql_log')||'
-    where log_time > :b1 and
-          log_type not like ''debug%'' and 
-          log_type in (select log_type from arcsql_log_type 
-                        where arcsql.is_truthy_y(sends_email)=''y'' or 
-                              arcsql.is_truthy_y(sends_sms)=''y'')' using g_contact_group.last_checked;
-   loop
-      fetch c into n;
-         exit when c%notfound;
-         arcsql.debug('send_email_messages: '||n.log_entry);
+
+procedure send_email_messages (
+   p_group_name in varchar2) is 
+   cursor c_email (p_last_sent date) is 
+   select a.* 
+     from arcsql_log a,
+          arcsql_log_type b 
+    where log_time > p_last_sent
+      and a.log_type=b.log_type
+      and a.log_type not like 'debug%' 
+      and arcsql.is_truthy_y(b.sends_email)='y'
+    order by log_time;
+   g arcsql_contact_group%rowtype;
+   m varchar2(1200);
+   email_addresses varchar2(1200);
+begin
+   debug('send_email_messages: ');
+   g := get_contact_group(p_group_name); 
+   select listagg(email_address, ',') into email_addresses 
+     from arcsql_contact_group_contacts 
+    where group_name=p_group_name;
+   for c in c_email(g.last_sent) loop 
+      m := m || to_char(c.log_time, 'DD-MON-RR HH24:MI')||': '||c.log_text||'
+';
    end loop;
-   update arcsql_contact_group set last_checked=sysdate where group_name=g_contact_group.group_name;
-   commit;
+   if m is not null and email_addresses is not null then 
+      send_email(
+         p_to=>email_addresses,
+         p_from=>arcsql_cfg.default_email_from_address,
+         p_body=>m,
+         p_subject=>'New log table entries from ArcSQL.');
+   end if;
 end;
+
 
 procedure check_contact_groups is 
-   cursor contact_groups is 
-   select * from arcsql_contact_group;
 
-   function is_max_queue_secs return boolean is 
+   cursor c_contact_groups is 
+   select * from arcsql_contact_group;
+   c arcsql_contact_group%rowtype;
+
+   function is_max_queue_secs (c arcsql_contact_group%rowtype) return boolean is 
       v_queue_secs number;
    begin 
       select round((sysdate-min(log_time))/1440)
         into v_queue_secs
         from arcsql_log 
-       where log_time > g_contact_group.last_checked;
-      if v_queue_secs >= g_contact_group.max_queue_secs then 
+       where log_time > c.last_sent;
+      if v_queue_secs >= c.max_queue_secs then 
          debug('is_max_queue_secs: true');
          return true;
       else 
@@ -2417,14 +2540,14 @@ procedure check_contact_groups is
       end if;
    end;
 
-   function is_max_idle_secs return boolean is 
+   function is_max_idle_secs (c arcsql_contact_group%rowtype) return boolean is 
       v_idle_secs number;
    begin 
       select round((sysdate-max(log_time))/1440)
         into v_idle_secs
         from arcsql_log 
-       where log_time > g_contact_group.last_checked;
-      if v_idle_secs >= g_contact_group.max_idle_secs then 
+       where log_time > c.last_sent;
+      if v_idle_secs >= c.max_idle_secs then 
          debug('is_max_idle_secs: true');
          return true;
       else 
@@ -2433,14 +2556,14 @@ procedure check_contact_groups is
       end if;
    end;
 
-   function is_max_count return boolean is 
+   function is_max_count (c arcsql_contact_group%rowtype) return boolean is 
       v_count number;
    begin 
       select count(*)
         into v_count
         from arcsql_log 
-       where log_time > g_contact_group.last_checked;
-      if v_count >= g_contact_group.max_count then 
+       where log_time > c.last_sent;
+      if v_count >= c.max_count then 
          debug('is_max_count: true');
          return true;
       else 
@@ -2448,19 +2571,28 @@ procedure check_contact_groups is
          return false;
       end if;
    end;
-
+   
 begin 
-   for contact_group in contact_groups loop 
-      set_contact_group(contact_group.group_name);
-      debug('Checking contact group '||contact_group.group_name);
-      if is_sms_possible and has_sms_messages then 
-         send_sms_messages;
-         send_email_messages;
-      elsif is_email_possible and has_email_messages and (is_max_queue_secs or is_max_idle_secs or is_max_count) then
-         send_email_messages;
+   for g in c_contact_groups loop 
+      debug('check_contact_groups: '||g.group_name);
+      c := get_contact_group(g.group_name);
+      if is_sms_possible(g.group_name) and has_sms_messages(g.group_name) then 
+         send_sms_messages(g.group_name);
+         send_email_messages(g.group_name);
+         update arcsql_contact_group 
+            set last_sent=sysdate 
+          where group_name=g.group_name;
+         commit;
+      elsif is_email_possible(g.group_name) and has_email_messages(g.group_name) and (is_max_queue_secs(c) or is_max_idle_secs(c) or is_max_count(c)) then
+         send_email_messages(g.group_name);
+         update arcsql_contact_group 
+            set last_sent=sysdate 
+          where group_name=g.group_name;
+         commit;
       end if;
    end loop;
 end;
+
 
 /* 
 -----------------------------------------------------------------------------------
@@ -2577,7 +2709,7 @@ procedure set_app_test_profile (
    p_env_type in varchar2 default null) is 
    -- Set g_app_test_profile. If env type not found try where env type is null.
    n number;
-   
+
    function set_exact_app_profile return boolean is 
    -- Match profile name and env type (could be null).
    begin 
@@ -2857,7 +2989,7 @@ end;
 
 procedure app_test_fail (p_message in varchar2 default null) is 
    -- Called by the test developer anytime the app test fails.
-   
+
    function retries_not_configured return boolean is
    -- Return true if retries are configured for the currently set app test profile.
    begin 
@@ -2921,7 +3053,7 @@ end;
 
 procedure app_test_pass is 
    -- Called by the test developer anytime the app test passes.
-   
+
    procedure do_app_pass_test is 
    begin 
       if g_app_test.test_status in ('RETRY') then 
@@ -3500,5 +3632,3 @@ end;
 
 end;
 /
-
-

@@ -6,6 +6,48 @@ exec arcsql.add_config('arcsql_version', '0.0', 'ArcSQL Version - Do not edit th
 exec arcsql.set_config('arcsql_version', '0.12');
 
 begin 
+   if not arcsql.does_log_type_exist('deprecated') then 
+      insert into arcsql_log_type (log_type, sends_email) values ('deprecated', 'N');
+   end if;
+end;
+/
+
+begin 
+   if not arcsql.does_log_type_exist('debug2') then 
+      insert into arcsql_log_type (log_type, sends_email) values ('debug2', 'N');
+   end if;
+end;
+/
+
+begin 
+   if not arcsql.does_log_type_exist('debug3') then 
+      insert into arcsql_log_type (log_type, sends_email) values ('debug3', 'N');
+   end if;
+end;
+/
+
+begin 
+   if not arcsql.does_log_type_exist('log') then 
+      insert into arcsql_log_type (log_type, sends_email) values ('log', 'N');
+   end if;
+end;
+/
+
+begin 
+   if not arcsql.does_log_type_exist('debug') then 
+      insert into arcsql_log_type (log_type, sends_email) values ('debug', 'N');
+   end if;
+end;
+/
+
+begin 
+   if not arcsql.does_log_type_exist('debug2') then 
+      insert into arcsql_log_type (log_type, sends_email) values ('debug2', 'N');
+   end if;
+end;
+/
+
+begin 
    if not arcsql.does_log_type_exist('alert') then 
       insert into arcsql_log_type (log_type, sends_email) values ('alert', 'Y');
    end if;
@@ -18,6 +60,15 @@ begin
    end if;
 end;
 /
+
+
+begin 
+   if not arcsql.does_log_type_exist('pass') then 
+      insert into arcsql_log_type (log_type, sends_email) values ('pass', 'N');
+   end if;
+end;
+/
+
 
 begin 
    if not arcsql.does_log_type_exist('email') then 
@@ -89,6 +140,12 @@ begin
 end;
 /
 
+update arcsql_log_type set sends_email='N' 
+ where log_type in ('pass', 'debug','debug2','info','log');
+ 
+update arcsql_log_type set sends_sms='Y' 
+ where log_type in ('critical','sms');
+ 
 begin
    if not arcsql.does_alert_priority_exist(1) then 
       insert into arcsql_alert_priority (

@@ -36,7 +36,8 @@ create or replace package saas_auth_pkg as
       p_user_name in varchar2,
       p_email in varchar2,
       p_password in varchar2,
-      p_confirm in varchar2);
+      p_confirm in varchar2,
+      p_timezone_name in varchar2 default null);
 
    function custom_auth (
       p_username in varchar2,

@@ -2,6 +2,17 @@
 create or replace package body apex_utl2 as
 
 
+function get_link_to_page_alias (
+    p_page_alias in varchar2,
+    p_relative_link boolean default true) return varchar2 is 
+begin 
+
+    return '/ords/f?p='||get_app_id||':'||p_page_alias;
+    -- '||v_protocol||'://'||v_domain||'/ords/f?p='||v_app_id||':verify:::::SAAS_AUTH_EMAIL,SAAS_AUTH_TOKEN:'||lower(v_saas_auth.email)||','||t||'
+
+end;
+
+
 function get_app_name return varchar2 is 
     -- Return the name of the current application.
     --
@@ -70,6 +81,20 @@ exception
         arcsql.log_err('change_theme_for_user: '||dbms_utility.format_error_stack);
         raise;
 end;
+
+
+function get_ip return varchar2 is 
+begin 
+    return owa_util.get_cgi_env('REMOTE_ADDR');
+end;
+
+
+function get_query_string return varchar2 is 
+begin 
+    -- https://www.oracle-and-apex.com/authenticate-apex-via-token/
+    return owa_util.get_cgi_env('QUERY_STRING');
+end;
+
 
 end;
 /

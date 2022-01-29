@@ -4,6 +4,15 @@ create or replace package arcsql as
 
    /* 
    -----------------------------------------------------------------------------------
+   Task Scheduling
+   -----------------------------------------------------------------------------------
+   */
+
+   procedure start_arcsql;
+   procedure stop_arcsql; 
+
+   /* 
+   -----------------------------------------------------------------------------------
    Advanced Queueing
    -----------------------------------------------------------------------------------
    */
@@ -285,8 +294,6 @@ create or replace package arcsql as
    -----------------------------------------------------------------------------------
    */
 
-   log_level number default 1;
-
    g_log_type arcsql_log_type%rowtype;
 
    procedure set_log_type (p_log_type in varchar2);
@@ -294,18 +301,6 @@ create or replace package arcsql as
    procedure raise_log_type_not_set;
 
    function does_log_type_exist (p_log_type in varchar2) return boolean;
-
-   procedure log_interface (
-      p_text in varchar2, 
-      p_key in varchar2, 
-      p_tags in varchar2,
-      p_level in number,
-      p_type in varchar2,
-      p_metric_name_1 in varchar2 default null,
-      p_metric_1 in number default null,
-      p_metric_name_2 in varchar2 default null,
-      p_metric_2 in number default null
-      );
 
    procedure log (
       p_text in varchar2, 
@@ -404,11 +399,23 @@ create or replace package arcsql as
    Contact Groups
    -----------------------------------------------------------------------------------
    */
+   procedure create_contact_group (
+      p_group_name in varchar2,
+      p_is_group_enabled in boolean default true,
+      p_is_group_on_hold in boolean default false,
+      p_is_sms_disabled in boolean default false,
+      p_max_queue_secs in number default 0,
+      p_max_idle_secs in number default 0,
+      p_max_count in number default 0);
+
+   procedure add_contact_to_contact_group (
+      p_group_name in varchar2,
+      p_email_address in varchar2,
+      p_sms_address in varchar2);
+
+   procedure send_email_messages (
+      p_group_name in varchar2);
    
-   g_contact_group arcsql_contact_group%rowtype;
-   procedure set_contact_group (p_group_name in varchar2);
-   procedure send_email_messages;
-   procedure raise_contact_group_not_set;
    procedure check_contact_groups;
 
    /* 

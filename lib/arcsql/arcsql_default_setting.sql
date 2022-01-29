@@ -2,7 +2,7 @@
 create or replace package arcsql_default_setting as 
    
    -- List ',' of emails is allowable.
-   arcsql_admin_email varchar2(120) := 'foo@bar.com';
+   arcsql_admin_email varchar2(120) := 'post.ethan@gmail.com';
 
    -- ArcSQL purges data from audsid_event table older than X hours.
    purge_event_hours number := 4;

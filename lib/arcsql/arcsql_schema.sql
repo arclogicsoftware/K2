@@ -575,7 +575,7 @@ begin
       execute_sql('
       create table arcsql_log_type (
       log_type varchar2(120),
-      sends_email varchar2(1) default ''Y'',
+      sends_email varchar2(1) default ''N'',
       sends_sms varchar2(1) default ''N''
       )', false);
       execute_sql('alter table arcsql_log_type add constraint pk_arcsql_log_type primary key (log_type)', false);
@@ -713,8 +713,6 @@ begin
       execute_sql('
       create table arcsql_contact_group (
       group_name varchar2(120),
-      email_addresses varchar2(1000),
-      sms_addresses varchar2(1000),
       is_group_enabled varchar2(1) default ''Y'' not null,
       is_group_on_hold varchar2(1) default ''N'' not null,
       is_sms_disabled varchar2(1) default ''N'' not null,
@@ -724,14 +722,36 @@ begin
       max_idle_secs number default 0,
       -- The maximum # of messages that the queue can hold before sending all of the messaged in the queue.
       max_count number default 0,
-      last_checked date default sysdate not null,
-      -- You can create a custom view on arcsql_log to limit which messages this contact group monitors.
-      view_name varchar2(120)
-      )', false);
+      last_sent date default sysdate not null)', false);
+   end if;
+   if not does_constraint_exist('pk_arcsql_contact_group') then 
       execute_sql('alter table arcsql_contact_group add constraint pk_arcsql_contact_group primary key (group_name)', false);
+   end if;
+   if not does_column_exist('arcsql_contact_group', 'last_sent') then 
+      execute_sql('alter table arcsql_contact_group add (last_sent date default sysdate not null)', false);
+   end if;
+   drop_column('arcsql_contact_group', 'last_checked');
+   drop_column('arcsql_contact_group', 'view_name');
+   drop_column('arcsql_contact_group', 'email_addresses');
+   drop_column('arcsql_contact_group', 'sms_addresses');
+end;
+/
+
+-- uninstall: drop table arcsql_contact_group_contacts cascade constraints purge;
+begin 
+   if not does_table_exist('arcsql_contact_group_contacts') then 
+      execute_sql('
+      create table arcsql_contact_group_contacts (
+         group_name varchar2(120),
+         email_address varchar2(120),
+         sms_address varchar2(120))', false);
+   end if;
+   if not does_constraint_exist('arcsql_contact_group_contacts_fk_group_name') then 
+      execute_sql('alter table arcsql_contact_group_contacts add constraint arcsql_contact_group_contacts_fk_group_name foreign key (group_name) references arcsql_contact_group (group_name) on delete cascade', false);
    end if;
 end;
 /
+
 
 -- uninstall: drop table arcsql_alert_priority cascade constraints purge;
 begin
@@ -816,11 +836,13 @@ exec drop_type('arcsql_csv_tab');
 
 exec drop_type('arcsql_csv_row');
 
+-- uninstall: drop type arcsql_csv_row;
 create type arcsql_csv_row as object (
    token varchar2(120),
    token_level number);
 /
 
+-- uninstall: drop type arcsql_csv_tab;
 create type arcsql_csv_tab is table of arcsql_csv_row;
 /
 

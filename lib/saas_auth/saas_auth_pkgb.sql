@@ -136,7 +136,8 @@ begin
           reset_pass_expire=null,
           last_login=sysdate,
           login_count=login_count+1,
-          last_session_id=v('APP_SESSION')
+          last_session_id=v('APP_SESSION'),
+          failed_login_count=0
     where user_id=p_user_id;
    select count(*) into n from user_source 
     where name = 'ON_LOGIN'
@@ -276,7 +277,7 @@ procedure send_email_verification_code_to (
    v_app_id       number                                    := apex_utl2.get_app_id;
    v_protocol     varchar2(12)                              := saas_auth_config.saas_auth_protocol;
    v_domain       varchar2(120)                             := saas_auth_config.saas_auth_domain;
-   v_from_address varchar2(120)                             := arcsql_cfg.email_from_address;
+   v_from_address varchar2(120)                             := arcsql_cfg.default_email_from_address;
    good_for       number                                    := saas_auth_config.token_good_for_minutes;
    m              varchar2(1200);
    v_saas_auth    saas_auth%rowtype;
@@ -461,7 +462,7 @@ function get_user_id_from_user_name (
    n number;
    v_user_name saas_auth.user_name%type := lower(p_user_name);
 begin 
-   arcsql.debug('get_user_id_from_user_name: user='||p_user_name);
+   arcsql.debug2('get_user_id_from_user_name: user='||p_user_name);
    select user_id into n 
      from v_saas_auth_available_accounts 
     where user_name = v_user_name;
@@ -596,7 +597,7 @@ begin
    set_password (
       p_user_name=>p_user_name,
       p_password=>p_password);
-   v_user_id := get_user_id_from_user_name(p_user_name=>lower(v_user_name));
+   v_user_id := get_user_id_from_user_name(p_user_name=>v_user_name);
    fire_create_account(v_user_id);
 end;
 
@@ -637,7 +638,8 @@ procedure create_account (
    p_user_name in varchar2,
    p_email in varchar2,
    p_password in varchar2,
-   p_confirm in varchar2) is
+   p_confirm in varchar2,
+   p_timezone_name in varchar2 default null) is
    v_message varchar2(4000);
    v_user_name varchar2(120) := lower(p_user_name);
    v_email varchar2(120) := lower(p_email);
@@ -659,6 +661,9 @@ begin
       p_user_name=>v_user_name,
       p_email=>v_email,
       p_password=>p_password);
+   set_timezone_name (
+      p_user_name => v_user_name,
+      p_timezone_name => p_timezone_name);
    -- This only works if it is enabled.
    send_email_verification_code_to(v_email);
    -- Can we auto login the user right away?
@@ -668,7 +673,9 @@ begin
          p_username=>v_user_name, 
          p_password=>p_password);
    end if;
-   
+   if saas_auth_config.send_email_on_create_account then 
+      arcsql.log_email('saas_auth_pkg.create_account: '||v_user_name);
+   end if;
 exception 
    when others then
       arcsql.log_err('create_account: '||dbms_utility.format_error_stack);
@@ -795,7 +802,7 @@ Thanks,
 - The '||v_app_name||' Team';
    send_email (
       p_to=>get_email_address_override(p_email),
-      p_from=>arcsql_cfg.email_from_address,
+      p_from=>arcsql_cfg.default_email_from_address,
       p_subject=>'Resetting your '||v_app_name||' account password!',
       p_body=>m);
 exception 
@@ -1037,7 +1044,7 @@ begin
     where message_type = p_message_type
       and (user_id=saas_auth_pkg.get_user_id_from_user_name(v('APP_USER')) 
        or session_id=v('APP_SESSION'));
-   arcsql.debug('flash_message_count: '||n);
+   arcsql.debug2('flash_message_count: '||n);
    return n;
 exception 
    when others then
