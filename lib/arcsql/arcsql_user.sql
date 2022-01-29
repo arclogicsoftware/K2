@@ -1,10 +1,8 @@
 
-define username='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-define password='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+define username='app'
 
-create user &username identified by &password;
 grant create session to &username;
-alter user &username quota 5g on data;
+alter user &username quota 5g on users;
 
 -- Direct grant required to create sequences from PL/SQL code.
 grant create sequence to &username;
@@ -22,16 +20,16 @@ grant drop public synonym to &username;
 grant select on sys.gv_$lock to &username;
 grant select on sys.gv_$session to &username;
 grant select on sys.gv_$bgprocess to &username;
-grant select on gv$locked_object to &username;
+grant select on gv_$locked_object to &username;
 grant select on dba_objects to &username;
 
 -- Used to get last password change time.
 grant select on dba_users to &username;
 
 -- Used for SQL_LOG.
-grant select on gv$sql to &username;
+grant select on gv_$sql to &username;
 -- Only used if licensed and explicitly specified in the arcsql_config table.
-grant select on gv$active_session_history to &username;
+grant select on gv_$active_session_history to &username;
 
 -- Used to generate random numbers and strings.
 grant execute on dbms_random to &username;
@@ -82,7 +80,7 @@ grant execute on dbms_crypto to &username;
 -- Required for oracle_monitoring.sql.
 grant select on dba_autotask_job_history to &username;
 grant select on dba_tablespaces to &username;
-grant select on gv$database to &username;
+grant select on gv_$database to &username;
 
 -- Needed to add scheduled jobs.
 grant create job to &username;

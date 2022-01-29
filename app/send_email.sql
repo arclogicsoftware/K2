@@ -13,6 +13,8 @@ begin
    if arcsql_cfg.disable_email then 
       return;
    end if;
+   -- This line needs to be added for Maxapex
+   wwv_flow_api.set_security_group_id;
    apex_mail.send(
       p_to=>p_to,
       p_from=>p_from,

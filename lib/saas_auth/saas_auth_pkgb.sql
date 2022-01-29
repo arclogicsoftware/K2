@@ -462,7 +462,7 @@ function get_user_id_from_user_name (
    n number;
    v_user_name saas_auth.user_name%type := lower(p_user_name);
 begin 
-   arcsql.debug2('get_user_id_from_user_name: user='||p_user_name);
+   arcsql.debug('get_user_id_from_user_name: user='||p_user_name);
    select user_id into n 
      from v_saas_auth_available_accounts 
     where user_name = v_user_name;
