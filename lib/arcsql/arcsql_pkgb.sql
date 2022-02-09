@@ -2067,6 +2067,29 @@ begin
       p_metric_2=>metric_2);
 end;
 
+
+procedure notify (
+   p_text in varchar2, 
+   p_key in varchar2 default null, 
+   p_tags in varchar2 default null,
+   metric_name_1 in varchar2 default null,
+   metric_1 in number default null,
+   metric_name_2 in varchar2 default null,
+   metric_2 in number default null) is 
+begin
+   log_interface (
+      p_text=>p_text, 
+      p_key=>p_key, 
+      p_tags=>p_tags, 
+      p_level=>0, 
+      p_type=>'notify',
+      p_metric_name_1=>metric_name_1,
+      p_metric_1=>metric_1,
+      p_metric_name_2=>metric_name_2,
+      p_metric_2=>metric_2);
+end;
+
+
 procedure log_deprecated (
    p_text in varchar2, 
    p_key in varchar2 default null, 
@@ -2270,7 +2293,6 @@ ToDo:
    * Ability to link groups with certain log entries. Maybe using a regex.
    * Create a default arcsql_admin contact group and add default email.
    * log_type sends_email/sms should support cron type values.
-   * make ui case insensative
 -----------------------------------------------------------------------------------
 */
 
@@ -2278,7 +2300,9 @@ function get_contact_group (
    p_group_name in varchar2) return arcsql_contact_group%rowtype is 
    r arcsql_contact_group%rowtype;
 begin 
-   select * into r from arcsql_contact_group where group_name=lower(p_group_name);
+   select * into r 
+     from arcsql_contact_group 
+    where group_name=lower(p_group_name);
    return r;
 end;
 
@@ -2574,7 +2598,7 @@ procedure check_contact_groups is
    
 begin 
    for g in c_contact_groups loop 
-      debug('check_contact_groups: '||g.group_name);
+      debug2('check_contact_groups: '||g.group_name);
       c := get_contact_group(g.group_name);
       if is_sms_possible(g.group_name) and has_sms_messages(g.group_name) then 
          send_sms_messages(g.group_name);
@@ -2653,6 +2677,7 @@ end;
  -----------------------------------------------------------------------------------
  */
 
+
 function app_test_profile_not_set return boolean is 
 begin 
    if g_app_test_profile.profile_name is null then 
@@ -2661,6 +2686,7 @@ begin
       return false;
    end if;
 end;
+
 
 procedure add_app_test_profile (
    p_profile_name in varchar2,
@@ -2703,6 +2729,7 @@ begin
       save_app_test_profile;
    end if;
 end;
+
 
 procedure set_app_test_profile (
    p_profile_name in varchar2 default null,
@@ -2747,12 +2774,14 @@ begin
    raise_application_error('-20001', 'Matching app profile not found.');
 end;
 
+
 procedure raise_app_test_profile_not_set is 
 begin 
    if app_test_profile_not_set then 
       raise_application_error('-20001', 'Application test profile not set.');
    end if;
 end;
+
 
 procedure save_app_test_profile is 
   pragma autonomous_transaction;
@@ -2781,6 +2810,7 @@ exception
       raise;
 end;
 
+
 function does_app_test_profile_exist (
    p_profile_name in varchar2,
    p_env_type in varchar2 default null) return boolean is 
@@ -2797,6 +2827,7 @@ begin
    end if;
 end;
 
+
 procedure set_default_app_test_profile is 
    n number;
 begin 
@@ -2811,8 +2842,10 @@ begin
    end if;
 end;
 
+
 function init_app_test (p_test_name varchar2) return boolean is
    -- Returns true if the test is enabled and it is time to run the test.
+   --
    pragma autonomous_transaction;
    n number;
    time_to_test boolean := false;
@@ -2905,6 +2938,7 @@ exception
       raise;
 end;
 
+
 procedure reset_app_test_profile is 
 begin 
    raise_app_test_profile_not_set;
@@ -2913,8 +2947,10 @@ begin
      p_env_type=>g_app_test_profile.env_type);
 end;
 
+
 procedure app_test_check is 
    -- Sends reminders and changes status to ABANDON when test status is currently FAIL.
+   --
 
    function abandon_interval return boolean is 
    -- Returns true if it is time to abandon this test.
@@ -2987,6 +3023,7 @@ begin
    save_app_test;
 end;
 
+
 procedure app_test_fail (p_message in varchar2 default null) is 
    -- Called by the test developer anytime the app test fails.
 
@@ -3051,6 +3088,7 @@ begin
    save_app_test;
 end;
 
+
 procedure app_test_pass is 
    -- Called by the test developer anytime the app test passes.
 
@@ -3093,12 +3131,15 @@ begin
    save_app_test;
 end;
 
+
 procedure app_test_done is 
    -- Marks completion of test. Not required but auto passes any test if fail has not been called. 
+   --
 begin 
    -- This only runs if app_test_fail has not already been called.
    app_test_pass;
 end;
+
 
 procedure save_app_test is 
    pragma autonomous_transaction;
@@ -3110,6 +3151,7 @@ exception
       rollback;
       raise;
 end;
+
 
 function cron_match (
    p_expression in varchar2,
@@ -3277,11 +3319,13 @@ begin
    return true;
 end;
 
+
 /* 
 -----------------------------------------------------------------------------------
 Sensor
 -----------------------------------------------------------------------------------
 */
+
 
 procedure set_sensor (p_key in varchar2) is 
 begin 
@@ -3293,6 +3337,7 @@ function does_sensor_exist (p_key in varchar2) return boolean is
 begin
    select count(*) into n from arcsql_sensor where sensor_key=p_key;
 end;
+
 
 function sensor (
    p_key in varchar2,
@@ -3339,11 +3384,13 @@ New input :'||g_sensor.input;
    end if;
 end;
 
+
 /* 
 -----------------------------------------------------------------------------------
 Messaging
 -----------------------------------------------------------------------------------
 */
+
 
 -- The messaging interface queue leverages the logging interface.
 procedure send_message (
@@ -3362,11 +3409,13 @@ begin
       p_level=>0);
 end;
 
+
 /* 
 -----------------------------------------------------------------------------------
 Alerting
 -----------------------------------------------------------------------------------
 */
+
 
 function is_alert_open (p_alert_key in varchar2) return boolean is 
    n number;

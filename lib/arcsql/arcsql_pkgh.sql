@@ -321,6 +321,15 @@ create or replace package arcsql as
       metric_name_2 in varchar2 default null,
       metric_2 in number default null);
 
+    procedure notify (
+      p_text in varchar2, 
+      p_key in varchar2 default null, 
+      p_tags in varchar2 default null,
+      metric_name_1 in varchar2 default null,
+      metric_1 in number default null,
+      metric_name_2 in varchar2 default null,
+      metric_2 in number default null);
+
    procedure log_deprecated (
       p_text in varchar2, 
       p_key in varchar2 default null, 

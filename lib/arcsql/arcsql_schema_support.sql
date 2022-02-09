@@ -310,3 +310,23 @@ begin
    end if;
 end;
 /
+
+
+create or replace procedure fix_identity_sequences is 
+   cursor c_identify_sequences is 
+      select table_name, column_name, sequence_name 
+        from user_tab_identity_cols;
+   max_value number;
+   next_value number;
+begin 
+   for c in c_identify_sequences loop 
+   execute immediate 'select max('||c.column_name||') from '||c.table_name into max_value;
+   execute immediate 'select '||c.sequence_name||'.nextval from dual' into next_value;
+      if max_value > next_value then 
+         execute immediate 'alter table '||c.table_name||' modify '||c.column_name||' generated as identity (start with '||to_number(max_value+100)||')';
+      end if;
+   end loop;
+end;
+/
+
+

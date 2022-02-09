@@ -4,18 +4,21 @@ create or replace package body apex_utl2 as
 
 function get_link_to_page_alias (
     p_page_alias in varchar2,
-    p_relative_link boolean default true) return varchar2 is 
+    p_is_relative boolean default true) return varchar2 is 
 begin 
-
-    return '/ords/f?p='||get_app_id||':'||p_page_alias;
-    -- '||v_protocol||'://'||v_domain||'/ords/f?p='||v_app_id||':verify:::::SAAS_AUTH_EMAIL,SAAS_AUTH_TOKEN:'||lower(v_saas_auth.email)||','||t||'
-
+    if p_is_relative then
+        return '/'||apex_utl2_config.ords_url_prefix||'/f?p='||get_app_id||':'||p_page_alias;
+    else
+        return saas_auth_config.saas_auth_protocol||'://'||saas_auth_config.saas_auth_domain||'/'||apex_utl2_config.ords_url_prefix||'/f?p='||get_app_id||':'||p_page_alias;
+    end if;
 end;
 
 
 function get_app_name return varchar2 is 
     -- Return the name of the current application.
     --
+    -- g_* variables are only available within an APEX context. 
+    -- Suggest using saas_app.app_name when you can.
 begin 
     -- https://jeffkemponoracle.com/tag/apex_application/
     return trim(apex_application.g_flow_name);

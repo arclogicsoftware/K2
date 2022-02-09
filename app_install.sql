@@ -1,3 +1,14 @@
+
+
+/*
+Pre-load all configs to resolve any dependency issues.
+*/
+@config/secret_arcsql_cfg.sql
+@config/secret_apex_utl2_config.sql 
+@config/secret_saas_auth_config.sql 
+@config/secret_saas_app_config.sql
+
+
 /*
 Arcsql needs to be installed first. Make sure you have run the script
 to make the grants from admin to the current user.
@@ -23,6 +34,13 @@ Install you application's code.
 */
 
 @app/app_install.sql
+
+
+/*
+Advance the start value of any identity sequences if a conflict is anticipated.
+*/
+
+exec fix_identity_sequences;
 
 
 commit;

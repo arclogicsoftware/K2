@@ -1,7 +1,7 @@
 
 ## On Tap
 
-* Repo needs login forms added to/for auth.
+* Repo needs login forms added to/for auth in export file.
 
 ### BUGS
 
@@ -24,6 +24,7 @@
 * Integration with a mailing list/newsletter/contact provider(s).
 * Landing page with sign up when service is available.
 * Admin: Notify on app errors with contextual links.
+* Affilate Links/Dashboard
 
 ## Features: LATER
 

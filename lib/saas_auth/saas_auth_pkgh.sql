@@ -2,6 +2,12 @@
 -- uninstall: drop package saas_auth_pkg;
 create or replace package saas_auth_pkg as
 
+   function get_email_override_when_set (
+      p_email varchar2) return varchar2;
+
+   function get_current_time_for_user (
+      p_user_id in number) return timestamp;
+
    procedure delete_user(
       p_user_name in varchar2);
 
@@ -37,7 +43,7 @@ create or replace package saas_auth_pkg as
       p_email in varchar2,
       p_password in varchar2,
       p_confirm in varchar2,
-      p_timezone_name in varchar2 default null);
+      p_timezone_name in varchar2 default 'US/Eastern');
 
    function custom_auth (
       p_username in varchar2,

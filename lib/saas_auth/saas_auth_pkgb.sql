@@ -1,6 +1,21 @@
 create or replace package body saas_auth_pkg as
 
 
+function get_current_time_for_user (
+   p_user_id in number) return timestamp is 
+   v_timezone_name saas_auth.timezone_name%type;
+   t timestamp;
+begin 
+   select timezone_name into v_timezone_name
+     from saas_auth 
+    where user_id=p_user_id;
+   if v_timezone_name is not null then 
+      execute immediate 'select systimestamp at time zone '''||v_timezone_name||''' from dual' into t;
+   end if;
+   return t;
+end;
+
+
 procedure delete_user(
    p_user_name in varchar2) is 
 begin 
@@ -46,12 +61,12 @@ begin
 end;
 
 
-function get_email_address_override (
+function get_email_override_when_set (
    -- Returns the override address if set otherwise returns the original address.
    --
    p_email varchar2) return varchar2 is 
 begin 
-   return nvl(trim(saas_auth_config.send_all_emails_to), p_email);
+   return nvl(trim(saas_auth_config.global_email_override), p_email);
 end;  
 
 
@@ -275,8 +290,6 @@ procedure send_email_verification_code_to (
    t              saas_auth.email_verification_token%type   := arcsql.str_random(6, 'an');
    v_app_name     varchar2(120)                             := apex_utl2.get_app_name;
    v_app_id       number                                    := apex_utl2.get_app_id;
-   v_protocol     varchar2(12)                              := saas_auth_config.saas_auth_protocol;
-   v_domain       varchar2(120)                             := saas_auth_config.saas_auth_domain;
    v_from_address varchar2(120)                             := arcsql_cfg.default_email_from_address;
    good_for       number                                    := saas_auth_config.token_good_for_minutes;
    m              varchar2(1200);
@@ -306,7 +319,7 @@ Hello,
 
 Thanks for signing up with '||v_app_name||'! Please verify your email address by clicking the link below.
 
-'||v_protocol||'://'||v_domain||'/ords/f?p='||v_app_id||':verify:::::SAAS_AUTH_EMAIL,SAAS_AUTH_TOKEN:'||lower(v_saas_auth.email)||','||t||'
+'||apex_utl2.get_link_to_page_alias(p_page_alias=>'verify', p_is_relative=>false)||':::::SAAS_AUTH_EMAIL,SAAS_AUTH_TOKEN:'||lower(v_saas_auth.email)||','||t||'
 
 Thanks,
 
@@ -314,7 +327,7 @@ Thanks,
 
    send_email (
       p_from=>v_from_address,
-      p_to=>get_email_address_override(v_saas_auth.email),
+      p_to=>get_email_override_when_set(v_saas_auth.email),
       p_subject=>'Welcome to '||v_app_name||'. Please verify your email.',
       p_body=>m);
 
@@ -462,7 +475,7 @@ function get_user_id_from_user_name (
    n number;
    v_user_name saas_auth.user_name%type := lower(p_user_name);
 begin 
-   arcsql.debug('get_user_id_from_user_name: user='||p_user_name);
+   arcsql.debug2('get_user_id_from_user_name: user='||p_user_name);
    select user_id into n 
      from v_saas_auth_available_accounts 
     where user_name = v_user_name;
@@ -639,7 +652,7 @@ procedure create_account (
    p_email in varchar2,
    p_password in varchar2,
    p_confirm in varchar2,
-   p_timezone_name in varchar2 default null) is
+   p_timezone_name in varchar2 default 'US/Eastern') is
    v_message varchar2(4000);
    v_user_name varchar2(120) := lower(p_user_name);
    v_email varchar2(120) := lower(p_email);
@@ -801,7 +814,7 @@ Thanks,
 
 - The '||v_app_name||' Team';
    send_email (
-      p_to=>get_email_address_override(p_email),
+      p_to=>get_email_override_when_set(p_email),
       p_from=>arcsql_cfg.default_email_from_address,
       p_subject=>'Resetting your '||v_app_name||' account password!',
       p_body=>m);
